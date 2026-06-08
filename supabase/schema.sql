@@ -91,3 +91,52 @@ CREATE POLICY "Anyone can submit feedback" ON public.feedback FOR INSERT WITH CH
 CREATE INDEX IF NOT EXISTS idx_schemes_category ON public.schemes(category);
 CREATE INDEX IF NOT EXISTS idx_schemes_slug ON public.schemes(slug);
 CREATE INDEX IF NOT EXISTS idx_saved_schemes_user ON public.saved_schemes(user_id);
+
+-- RAG / Supabase Vector support
+-- Store one searchable document per scheme. The app can fall back to local
+-- semantic ranking when this table or RPC is not configured.
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS public.scheme_documents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  scheme_id TEXT UNIQUE NOT NULL,
+  content TEXT NOT NULL,
+  metadata JSONB DEFAULT '{}',
+  embedding VECTOR(384) NOT NULL,
+  source_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_scheme_documents_embedding
+ON public.scheme_documents
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = 100);
+
+ALTER TABLE public.scheme_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.match_schemes(
+  query_embedding VECTOR(384),
+  match_count INT DEFAULT 6
+)
+RETURNS TABLE (
+  scheme_id TEXT,
+  content TEXT,
+  metadata JSONB,
+  similarity FLOAT
+)
+LANGUAGE SQL
+STABLE
+AS $$
+  SELECT
+    scheme_documents.scheme_id,
+    scheme_documents.content,
+    scheme_documents.metadata,
+    1 - (scheme_documents.embedding <=> query_embedding) AS similarity
+  FROM public.scheme_documents
+  ORDER BY scheme_documents.embedding <=> query_embedding
+  LIMIT match_count;
+$$;
+
+CREATE POLICY "Public read scheme documents"
+ON public.scheme_documents FOR SELECT USING (true);

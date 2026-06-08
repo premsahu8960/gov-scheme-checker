@@ -108,3 +108,73 @@ export interface ChatMessage {
   content: string
   createdAt: number
 }
+
+export interface SchemeModel {
+  id: string
+  scheme_name: string
+  category: SchemeCategory
+  beneficiaries: string[]
+  state: string
+  income_limit: number | null
+  age_limit: {
+    min: number | null
+    max: number | null
+  }
+  eligibility: string[]
+  benefits: string[]
+  documents: string[]
+  application_process: string[]
+  apply_link: string
+  official_link: string
+  source: string
+  last_date?: string | null
+  filters: {
+    caste?: CasteCategory[]
+    state?: string[]
+    age?: { min?: number; max?: number }
+    gender?: Gender[]
+    occupation?: EmploymentStatus[]
+    income?: number
+    disabilityStatus?: boolean
+    studentOnly?: boolean
+    farmerOnly?: boolean
+    bplOnly?: boolean
+    minorityOnly?: boolean
+    widowOnly?: boolean
+    seniorCitizenOnly?: boolean
+    startupOwnerOnly?: boolean
+    skillDevelopmentOnly?: boolean
+  }
+}
+
+export interface ExtractedUserProfile {
+  caste?: CasteCategory
+  state?: string
+  age?: number
+  gender?: Gender
+  occupation?: EmploymentStatus
+  education?: string
+  income?: number
+  disabilityStatus?: boolean
+  isStudent?: boolean
+  isFarmer?: boolean
+  isWidow?: boolean
+  isMinority?: boolean
+  isSeniorCitizen?: boolean
+  isStartupOwner?: boolean
+  skillDevelopmentInterest?: boolean
+  bplStatus?: boolean
+}
+
+export interface RankedScheme {
+  scheme: SchemeModel
+  rank: number
+  semanticScore: number
+  eligibilityScore: number
+  confidenceScore: number
+  matchStrength: 'strong' | 'possible' | 'low'
+  eligible: boolean
+  matchedCriteria: string[]
+  missingInformation: string[]
+  disqualifyingCriteria: string[]
+}

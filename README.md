@@ -53,8 +53,12 @@ Copy `.env.example` to `.env.local`:
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_OPENROUTER_API_KEY=your-key   # optional, for AI recommendations
+OPENAI_API_KEY=your-openai-api-key
+OPENAI_MODEL=chat-latest
+VITE_OPENROUTER_API_KEY=your-key   # optional legacy fallback
 ```
+
+The chatbot uses local RAG retrieval first, then sends the retrieved scheme context to ChatGPT through `api/chatgpt.ts`. Keep `OPENAI_API_KEY` server-side. Do not expose it as a `VITE_` variable.
 
 ## Project Structure
 
